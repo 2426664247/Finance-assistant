@@ -1,6 +1,7 @@
 import streamlit as st
 from financial_agent.core.agent import create_financial_agent
 from financial_agent.core.llm_adapter import VolcanoLLM
+from langchain.schema import HumanMessage, AIMessage
 
 # --- 页面配置与标题 ---
 st.set_page_config(page_title="金融咨询智能体", page_icon="💰", layout="wide")
@@ -41,10 +42,18 @@ if prompt := st.chat_input("请输入您的问题..."):
         full_response = ""
         output_started = False
         
+        # 为智能体准备对话历史 (不包含当前的用户输入)
+        chat_history = []
+        for msg in st.session_state.messages[:-1]:
+            if msg["role"] == "user":
+                chat_history.append(HumanMessage(content=msg["content"]))
+            elif msg["role"] == "assistant":
+                chat_history.append(AIMessage(content=msg["content"]))
+        
         try:
             status_placeholder.text("思考中...")
-            # 手动遍历并模拟流式输出
-            for chunk in agent.stream({"input": prompt}):
+            # 传入 input 和 chat_history
+            for chunk in agent.stream({"input": prompt, "chat_history": chat_history}):
                 if "actions" in chunk and not output_started:
                     for action in chunk["actions"]:
                         status_placeholder.text(f"查询工具: {action.tool}...")
