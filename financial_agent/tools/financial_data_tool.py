@@ -37,8 +37,8 @@ class FinancialDataTool(BaseTool):
     description: str = "用于获取股票的日K线数据。输入应为一个包含'symbol', 'start_date', 'end_date'的字典。"
     args_schema: Type[BaseModel] = StockQueryInput
 
-    def _run(self, symbol: str, start_date: str, end_date: str) -> dict:
-        """执行获取日K线数据的核心逻辑"""
+    def _run(self, symbol: str, start_date: str, end_date: str) -> str:
+        """执行获取日K线数据的核心逻辑。返回纯文本字符串以兼容 LangChain Agent。"""
         # 若为 A 股代码，优先使用 Tushare（更稳定）
         if self._is_china_equity(symbol):
             ts_init_ok = self._init_tushare()
@@ -46,18 +46,18 @@ class FinancialDataTool(BaseTool):
             if ts_init_ok and ts_code:
                 ts_result = self._fetch_with_tushare(ts_code, start_date, end_date)
                 if ts_result:
-                    return {"output": ts_result}
+                    return ts_result
                 # 若 Tushare 返回空或失败，继续尝试国际源
         # 国际源（yfinance），失败则回退到 Stooq
         try:
             data = yf.download(symbol, start=start_date, end=end_date)
             if data is not None and not data.empty:
-                return {"output": f"成功获取 {symbol} 从 {start_date} 到 {end_date} 的日K线数据：\n{data.to_string()}"}
+                return f"成功获取 {symbol} 从 {start_date} 到 {end_date} 的日K线数据：\n{data.to_string()}"
             result = self._fallback_fetch(symbol, start_date, end_date)
-            return {"output": result}
+            return result
         except Exception as e:
             result = self._fallback_fetch(symbol, start_date, end_date, err=e)
-            return {"output": result}
+            return result
 
     def _arun(self, query: str):
         raise NotImplementedError("This tool does not support async")

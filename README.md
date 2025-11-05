@@ -1,0 +1,117 @@
+# 金融咨询智能体（Financial Agent）
+版本：v1.4.1
+
+一个基于 Streamlit 与 LangChain 的金融咨询智能体，支持基础金融问答、知识库检索以及股票日K数据查询。
+
+## 功能概览
+- 金融术语与常识问答
+- 知识库检索（CSV 构建的本地知识库）
+- 股票日K数据查询（A 股优先使用 Tushare，国际源采用 yfinance，失败时回退 Stooq）
+
+## 目录结构（简要）
+```
+.
+├── app.py                     # Streamlit 入口
+├── financial_agent/
+│   ├── core/
+│   │   ├── agent.py           # 智能体构建（规则路由版）
+│   │   └── llm_adapter.py     # 模型与向量适配
+│   ├── tools/
+│   │   ├── financial_data_tool.py    # 股票日K数据工具
+│   │   └── knowledge_base_tool.py    # 知识库检索工具
+│   ├── financial_knowledge_base.csv  # 知识库数据
+│   └── configs/.env           # 环境变量配置
+└── webapp/
+    ├── ui.py                  # 页面与交互（流式显示）
+    └── session.py             # 会话管理与历史记录
+```
+
+## 安装与配置
+推荐在独立的虚拟环境中安装运行（Conda 或 venv 均可）。依赖已在 `financial_agent/requirements.txt` 中精确锁定，便于复现。
+
+1) 创建并激活环境（示例为 Conda）：
+```
+conda create -n financial_agent python=3.10
+conda activate financial_agent
+```
+
+2) 安装依赖：
+```
+pip install -r financial_agent/requirements.txt
+```
+（requirements 已精确锁定到当前运行的版本，包括 `langchain==0.2.17`、`langchain-community==0.2.19`、`langchain-core==0.2.43`、`langchain-text-splitters==0.2.4`、`streamlit==1.51.0`、`faiss-cpu==1.7.4`、`yfinance==0.2.66`、`pandas==2.1.4`、`numpy==1.26.2`、`pandas-datareader==0.10.0`、`tushare==1.4.24`、`python-dotenv==1.0.0`、`volcengine-python-sdk[ark]==4.0.31`。）
+
+3) 配置环境变量（`financial_agent/configs/.env`）：
+```
+ARK_API_KEY=your_api_key
+ARK_MODEL_ID=your_chat_model_id
+ARK_EMBEDDING_MODEL_ID=your_embedding_model_id
+TUSHARE_TOKEN=your_tushare_token
+```
+
+## 启动
+环境激活后，在项目根目录运行（如需在服务器后台运行，请参考 Streamlit 文档）：
+```
+streamlit run app.py
+```
+启动成功后，浏览器访问：
+```
+http://localhost:8501
+```
+
+## 使用示例
+- 金融数据查询（A 股或国际标的）：
+  - 600519 从 2024-01-01 到 2024-03-31 的日K线
+  - AAPL 从 2023-11-01 到 2023-12-01 的日K线
+- 知识库问答：
+  - ETF是什么？有哪些风险？
+- 通用问答：
+  - 例如“介绍一下量化交易的基本流程”，系统会注入当前日期上下文后回答。
+
+## 实现说明
+- 智能体采用“规则路由版”：
+  - 优先识别“股票代码+日期范围”→ 调用金融数据工具
+  - 否则尝试知识库检索 → 用 LLM 生成回答
+  - 最后回退为通用 LLM 回复
+- 工具返回统一为纯字符串，避免消息校验错误；UI 保持 `.stream(...)` 流式渲染。
+- 依赖导入已对齐到新版结构：
+  - `FAISS` 使用 `langchain_community.vectorstores`
+  - `CSVLoader` 使用 `langchain_community.document_loaders`
+  - 文本切分器使用 `langchain_text_splitters`
+  - 消息类型使用 `langchain_core.messages`
+
+## 常见问题（FAQ）
+- A 股数据为空或报错：
+  - 优先在 `.env` 配置 `TUSHARE_TOKEN`；否则将回退到 yfinance 或 Stooq。
+- yfinance 限流：
+  - 缩短日期范围、稍后重试，或依赖 Tushare 获取 A 股数据。
+- CSV 路径与编码：
+  - 使用相对路径与 UTF-8 编码加载 `financial_knowledge_base.csv`；确认文件存在且编码正确。
+- LangSmith 提示：
+  - 若日志提示缺少 LangSmith API Key，可忽略，不影响本地功能。
+- Windows 编码：
+  - 请确保 `.env` 与 `requirements.txt` 使用 UTF-8 编码保存，避免 GBK 读取问题。
+- 消息校验错误：
+  - 工具返回已统一为 `str`；若仍有问题，清理缓存并重启应用。
+
+## 可选演进
+- 迁移到“新式 Agent（自动工具绑定）”：
+  - 新增聊天模型适配，支持原生 `.bind_tools`/函数调用
+  - 使用 `create_agent` 或 LangGraph 的代理图，实现自动工具选择与结构化输出
+  - 保持现有 UI 的事件流与 `.stream(...)` 行为
+
+## 复现步骤（一步到位）
+- 创建虚拟环境并激活（示例：Conda + Python 3.10）：
+  - `conda create -n financial_agent python=3.10`
+  - `conda activate financial_agent`
+- 安装依赖（已精确版本锁定）：
+  - `pip install -r financial_agent/requirements.txt`
+- 配置环境变量（`financial_agent/configs/.env`）：
+  - `ARK_API_KEY`、`ARK_MODEL_ID`、`ARK_EMBEDDING_MODEL_ID`、`ARK_TITLE_MODEL_ID`
+  - 可选 `TUSHARE_TOKEN`
+- 运行应用：
+  - `streamlit run app.py`
+- 验证：
+  - 侧边栏“历史记录”只在创建新对话后显示上一会话标题（使用轻量模型生成）；
+  - 金融数据查询示例（A 股/国际）：`600519 从 2024-01-01 到 2024-03-31 的日K线`、`AAPL 从 2023-11-01 到 2023-12-01 的日K线`；
+  - 知识库问答示例：`ETF是什么？有哪些风险？`。
