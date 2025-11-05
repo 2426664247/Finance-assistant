@@ -3,6 +3,7 @@ import os
 import json
 import uuid
 from datetime import datetime
+from financial_agent.core.llm_adapter import VolcanoLLM
 
 # --- 文件夹设置 ---
 HISTORY_DIR = "chat_history"
@@ -15,11 +16,69 @@ def get_new_session_id():
     """生成一个新的、基于时间的会话ID"""
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+def generate_chat_title(messages):
+    """使用一个独立的、轻量的LLM为对话生成简洁的标题"""
+    # 明确使用为标题生成而指定的轻量模型
+    title_model_id = os.getenv("ARK_TITLE_MODEL_ID")
+    llm = VolcanoLLM(model_id=title_model_id)
+    
+    # 1. 格式化对话内容
+    conversation_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+    
+    # 2. 构建Prompt
+    prompt = f"""请根据以下对话内容，为其生成一个简洁的、不超过10个字的标题。
+
+对话内容:
+---
+{conversation_text}
+---
+
+标题:"""
+    
+    # 3. 调用LLM生成标题
+    try:
+        title = llm._call(prompt)
+        # 4. 清理和截断标题，使其适合作为文件名
+        # 移除不适合做文件名的字符
+        safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '_')).rstrip()
+        # 如果标题过长，进行截断
+        return safe_title[:20] if len(safe_title) > 20 else safe_title
+    except Exception as e:
+        # 如果LLM调用失败，则回退到使用时间戳
+        print(f"Error generating title: {e}")
+        return get_new_session_id()
+
 def save_chat_history(session_id, messages):
-    """将聊天记录保存到JSON文件"""
+    """将聊天记录保存到JSON文件，并优先使用动态生成的标题"""
     if not messages:
         return
-    file_path = os.path.join(HISTORY_DIR, f"{session_id}.json")
+
+    # 检查缓存中是否已有为该会话生成的标题
+    if session_id in st.session_state.generated_titles:
+        title = st.session_state.generated_titles.pop(session_id) # 使用并移除缓存的标题
+    else:
+        # 如果缓存中没有，再判断是否是需要即时生成标题的新会话
+        is_timestamp_id = False
+        try:
+            datetime.strptime(session_id, "%Y-%m-%d_%H-%M-%S")
+            is_timestamp_id = True
+        except ValueError:
+            is_timestamp_id = False
+        
+        if is_timestamp_id:
+            title = generate_chat_title(messages)
+        else:
+            title = session_id # 如果不是新会话，则使用其本身的ID（即标题）
+
+    # 更新会话状态中的ID
+    if session_id != title:
+        if session_id in st.session_state.messages:
+            st.session_state.messages[title] = st.session_state.messages.pop(session_id)
+        if st.session_state.current_session_id == session_id:
+            st.session_state.current_session_id = title
+    
+    # 使用最终确定的标题作为文件名
+    file_path = os.path.join(HISTORY_DIR, f"{title}.json")
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(messages, f, ensure_ascii=False, indent=4)
 
@@ -30,16 +89,34 @@ def initialize_session_state():
     if "current_session_id" not in st.session_state:
         st.session_state.current_session_id = get_new_session_id()
         st.session_state.messages[st.session_state.current_session_id] = []
+    # 新增：用于缓存动态生成的标题
+    if "generated_titles" not in st.session_state:
+        st.session_state.generated_titles = {}
 
 def get_current_messages():
     """获取当前会话的聊天记录"""
     return st.session_state.messages.get(st.session_state.current_session_id, [])
 
 def add_message_to_current_session(role, content):
-    """向当前会话添加一条消息"""
+    """向当前会话添加一条消息，并动态更新标题"""
     current_messages = get_current_messages()
     current_messages.append({"role": role, "content": content})
     st.session_state.messages[st.session_state.current_session_id] = current_messages
+
+    # --- 动态标题生成逻辑 ---
+    session_id = st.session_state.current_session_id
+    is_new_chat = False
+    try:
+        datetime.strptime(session_id, "%Y-%m-%d_%H-%M-%S")
+        is_new_chat = True
+    except ValueError:
+        is_new_chat = False
+
+    # 当对话进行到第一轮（用户提问 -> 助手回答）后，就在后台生成标题
+    if is_new_chat and len(current_messages) >= 2:
+        # 调用LLM生成标题并将其缓存
+        title = generate_chat_title(current_messages)
+        st.session_state.generated_titles[session_id] = title
 
 def handle_new_chat():
     """处理“新对话”按钮的点击事件"""

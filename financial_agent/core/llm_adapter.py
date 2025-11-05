@@ -28,11 +28,12 @@ class VolcanoLLM(LLM):
     base_url: str = "https://ark.cn-beijing.volces.com/api/v3"
     streaming: bool = False
 
-    def __init__(self, streaming: bool = False, **kwargs: Any):
+    def __init__(self, streaming: bool = False, model_id: str = None, **kwargs: Any):
         super().__init__(**kwargs)
         self.streaming = streaming
         self.api_key = os.getenv("ARK_API_KEY")
-        self.model_id = os.getenv("ARK_MODEL_ID")
+        # 优先使用传入的 model_id，否则从环境变量中获取
+        self.model_id = model_id or os.getenv("ARK_MODEL_ID")
         if not self.api_key or not self.model_id:
             raise ValueError("ARK_API_KEY 和 ARK_MODEL_ID 环境变量未设置，请在 .env 文件中配置。")
 
@@ -51,6 +52,8 @@ class VolcanoLLM(LLM):
         """
         同步调用模型。
         """
+        print(f"\n[LLM_ADAPTER_LOG] >>>>>>>> 同步调用开始 >>>>>>>>")
+        print(f"[LLM_ADAPTER_LOG] Model ID: {self.model_id}")
         client = Ark(
             api_key=self.api_key,
             base_url=self.base_url,
@@ -62,8 +65,13 @@ class VolcanoLLM(LLM):
                 stream=False,
                 **kwargs
             )
-            return completion.choices[0].message.content
+            response_content = completion.choices[0].message.content
+            print(f"[LLM_ADAPTER_LOG] Model Response: {response_content}")
+            print(f"[LLM_ADAPTER_LOG] <<<<<<<< 同步调用结束 <<<<<<<<\n")
+            return response_content
         except Exception as e:
+            print(f"[LLM_ADAPTER_LOG] Error: {e}")
+            print(f"[LLM_ADAPTER_LOG] <<<<<<<< 同步调用异常结束 <<<<<<<<\n")
             raise RuntimeError(f"调用火山方舟模型时出错: {e}")
 
     def _stream(
@@ -74,6 +82,8 @@ class VolcanoLLM(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         """流式调用模型。"""
+        print(f"\n[LLM_ADAPTER_LOG] >>>>>>>> 流式调用开始 >>>>>>>>")
+        print(f"[LLM_ADAPTER_LOG] Model ID: {self.model_id}")
         client = Ark(
             api_key=self.api_key,
             base_url=self.base_url,
@@ -85,13 +95,26 @@ class VolcanoLLM(LLM):
                 stream=True,
                 **kwargs
             )
-            for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content is not None:
-                    content = chunk.choices[0].delta.content
-                    yield GenerationChunk(text=content)
-                    if run_manager:
-                        run_manager.on_llm_new_token(content)
+
+            def logging_iterator(stream_iterator):
+                full_response = []
+                try:
+                    for chunk in stream_iterator:
+                        if chunk.choices and chunk.choices[0].delta.content is not None:
+                            content = chunk.choices[0].delta.content
+                            full_response.append(content)
+                            yield GenerationChunk(text=content)
+                            if run_manager:
+                                run_manager.on_llm_new_token(content)
+                finally:
+                    print(f"[LLM_ADAPTER_LOG] Model Response: {''.join(full_response)}")
+                    print(f"[LLM_ADAPTER_LOG] <<<<<<<< 流式调用结束 <<<<<<<<\n")
+
+            return logging_iterator(stream)
+
         except Exception as e:
+            print(f"[LLM_ADAPTER_LOG] Error: {e}")
+            print(f"[LLM_ADAPTER_LOG] <<<<<<<< 流式调用异常结束 <<<<<<<<\n")
             raise RuntimeError(f"调用火山方舟流式模型时出错: {e}")
 
     @property
