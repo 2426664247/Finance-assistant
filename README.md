@@ -12,22 +12,26 @@
 
 ## 🚀 环境设置与运行
 
-为了保证项目的稳定运行和依赖隔离，强烈建议您使用虚拟环境。
+为了保证项目的稳定运行和依赖隔离，强烈建议您使用虚拟环境。本项目的开发和测试环境基于以下精确版本，为确保最佳兼容性，请遵循此配置。
 
-### 1. 克隆项目
+### 1. 基础环境
+
+- **Python 版本**: `3.10.19`
+
+请确保您的系统中已安装 Python 3.10.19。您可以从 [Python 官网](https://www.python.org/downloads/release/python-31019/) 下载对应的安装包。
+
+### 2. 克隆项目
 
 ```bash
 git clone git@github.com:2426664247/Finance-assistant.git
 cd Finance-assistant
 ```
 
-### 2. 创建并激活虚拟环境
-
-本项目推荐使用 Python 3.9 或更高版本。
+### 3. 创建并激活虚拟环境
 
 - **Windows**:
   ```bash
-  # 创建虚拟环境
+  # 使用指定的 Python 版本创建虚拟环境
   python -m venv .venv
 
   # 激活虚拟环境
@@ -36,7 +40,7 @@ cd Finance-assistant
 
 - **macOS / Linux**:
   ```bash
-  # 创建虚拟环境
+  # 使用指定的 Python 版本创建虚拟环境
   python3 -m venv .venv
 
   # 激活虚拟环境
@@ -45,15 +49,26 @@ cd Finance-assistant
 
 激活成功后，您会看到命令行提示符前出现 `(.venv)` 标识。
 
-### 3. 安装项目依赖
+### 4. 安装项目依赖
 
-所有依赖项都记录在 `financial_agent/requirements.txt` 文件中。
+所有依赖项及其精确版本都记录在 `financial_agent/requirements.txt` 文件中。
 
 ```bash
 pip install -r financial_agent/requirements.txt
 ```
 
-### 4. 配置环境变量
+此命令将安装以下核心依赖：
+- `langchain==0.0.350`
+- `langchain-community==0.0.10`
+- `volcengine-python-sdk[ark]`
+- `tushare`
+- `yfinance`
+- `faiss-cpu==1.7.4`
+- `pandas==2.1.4`
+- `numpy==1.26.2`
+- `python-dotenv==1.0.0`
+
+### 5. 配置环境变量
 
 项目需要配置一些 API 密钥才能正常工作。请在项目根目录下创建一个名为 `.env` 的文件，并根据 `financial_agent/.env.example` 的格式填入您的密钥：
 
@@ -68,7 +83,7 @@ VOLC_SECRET_KEY="<your-secret-key>"
 TUSHARE_TOKEN="<your-tushare-token>"
 ```
 
-### 5. 运行应用
+### 6. 运行应用
 
 一切准备就绪后，在项目根目录下运行以下命令来启动 Streamlit 应用：
 
