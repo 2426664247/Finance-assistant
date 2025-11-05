@@ -51,22 +51,13 @@ cd Finance-assistant
 
 ### 4. 安装项目依赖
 
-所有依赖项及其精确版本都记录在 `financial_agent/requirements.txt` 文件中。
+所有依赖项及其精确版本都记录在 `financial_agent/requirements.txt` 文件中。该文件通过 `pip freeze` 生成，锁定了所有直接及间接依赖，以确保在任何环境下都能创建 100% 一致的运行环境。
 
 ```bash
 pip install -r financial_agent/requirements.txt
 ```
 
-此命令将安装以下核心依赖：
-- `langchain==0.0.350`
-- `langchain-community==0.0.10`
-- `volcengine-python-sdk[ark]`
-- `tushare`
-- `yfinance`
-- `faiss-cpu==1.7.4`
-- `pandas==2.1.4`
-- `numpy==1.26.2`
-- `python-dotenv==1.0.0`
+这将安装项目所需的所有软件包，保证了版本的精确匹配和项目的稳定性。
 
 ### 5. 配置环境变量
 
