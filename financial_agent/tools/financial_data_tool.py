@@ -38,7 +38,11 @@ class FinancialDataTool(BaseTool):
     args_schema: Type[BaseModel] = StockQueryInput
 
     def _run(self, symbol: str, start_date: str, end_date: str) -> str:
+<<<<<<< HEAD
         """执行获取日K线数据的核心逻辑"""
+=======
+        """执行获取日K线数据的核心逻辑。返回纯文本字符串以兼容 LangChain Agent。"""
+>>>>>>> release/v1.4.1
         # 若为 A 股代码，优先使用 Tushare（更稳定）
         if self._is_china_equity(symbol):
             ts_init_ok = self._init_tushare()

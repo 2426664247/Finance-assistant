@@ -3,6 +3,11 @@ import os
 import json
 import uuid
 from datetime import datetime
+<<<<<<< HEAD
+=======
+from typing import List
+
+>>>>>>> release/v1.4.1
 from financial_agent.core.llm_adapter import VolcanoLLM
 
 # --- 文件夹设置 ---
@@ -16,6 +21,7 @@ def get_new_session_id():
     """生成一个新的、基于时间的会话ID"""
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+<<<<<<< HEAD
 def generate_chat_title(messages):
     """使用一个独立的、轻量的LLM为对话生成简洁的标题"""
     # 明确使用为标题生成而指定的轻量模型
@@ -79,8 +85,23 @@ def save_chat_history(session_id, messages):
     
     # 使用最终确定的标题作为文件名
     file_path = os.path.join(HISTORY_DIR, f"{title}.json")
+=======
+def save_chat_history(session_id, messages, finalize: bool = False):
+    """将聊天记录保存到JSON文件。
+    - 仅在 finalize=True 时写入文件并生成标题（用户点击“新对话”时）。
+    - finalize=False 时不写入文件（避免当前会话出现在历史列表）。
+    """
+    if messages is None:
+        return
+    if not finalize:
+        # 不持久化当前会话，直到创建新对话时再写入
+        return
+    file_path = os.path.join(HISTORY_DIR, f"{session_id}.json")
+    title = _generate_title_safe(messages)
+    payload = {"title": title, "messages": messages}
+>>>>>>> release/v1.4.1
     with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(messages, f, ensure_ascii=False, indent=4)
+        json.dump(payload, f, ensure_ascii=False, indent=4)
 
 def initialize_session_state():
     """初始化 Streamlit 的 session_state"""
@@ -102,6 +123,8 @@ def add_message_to_current_session(role, content):
     current_messages = get_current_messages()
     current_messages.append({"role": role, "content": content})
     st.session_state.messages[st.session_state.current_session_id] = current_messages
+    # 仅保存消息，保持现有标题不变（不动态更新）
+    save_chat_history(st.session_state.current_session_id, current_messages, finalize=False)
 
     # --- 动态标题生成逻辑 ---
     session_id = st.session_state.current_session_id
@@ -120,7 +143,8 @@ def add_message_to_current_session(role, content):
 
 def handle_new_chat():
     """处理“新对话”按钮的点击事件"""
-    save_chat_history(st.session_state.current_session_id, get_current_messages())
+    # 在创建新会话前，最终生成并写入当前会话标题
+    save_chat_history(st.session_state.current_session_id, get_current_messages(), finalize=True)
     st.session_state.current_session_id = get_new_session_id()
     st.session_state.messages[st.session_state.current_session_id] = []
     st.rerun()
@@ -128,14 +152,21 @@ def handle_new_chat():
 def load_chat_history(session_id):
     """加载指定的聊天历史记录到当前会话"""
     # 在加载前，先保存当前可能正在进行的对话
-    save_chat_history(st.session_state.current_session_id, get_current_messages())
+    # 仅保存消息，不更新标题
+    save_chat_history(st.session_state.current_session_id, get_current_messages(), finalize=False)
 
     file_path = os.path.join(HISTORY_DIR, f"{session_id}.json")
     if os.path.exists(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             chat_history = json.load(f)
-            # 修复：将加载的列表作为值存入字典，而不是覆盖整个字典
-            st.session_state.messages[session_id] = chat_history
+            # 兼容两种格式：列表 或 {title, messages}
+            if isinstance(chat_history, list):
+                messages = chat_history
+            elif isinstance(chat_history, dict):
+                messages = chat_history.get("messages", [])
+            else:
+                messages = []
+            st.session_state.messages[session_id] = messages
             # 修复：更新 current_session_id 以切换到加载的会话
             st.session_state.current_session_id = session_id
             st.rerun()
@@ -146,3 +177,43 @@ def delete_chat_history(session_id):
     if os.path.exists(file_path):
         os.remove(file_path)
         # st.rerun() # The rerun is already in ui.py
+
+
+def _generate_title_safe(messages: List[dict]) -> str:
+    """动态生成会话标题：使用轻量模型 ARK_TITLE_MODEL_ID；若不可用则回退。"""
+    try:
+        # 环境变量读取（若不存在则回退）
+        title_model_id = os.getenv("ARK_TITLE_MODEL_ID")
+        api_key = os.getenv("ARK_API_KEY")
+        if not title_model_id or not api_key:
+            # 简单回退：取最近一条用户消息或默认标题
+            for m in reversed(messages):
+                if m.get("role") == "user" and m.get("content"):
+                    return _truncate_title(m["content"]) or "新的对话"
+            return "新的对话"
+
+        # 构造标题提示：仅取最近若干条消息，避免长文本
+        recent = messages[-6:] if messages else []
+        convo = "\n".join([f"{m.get('role','')}: {str(m.get('content',''))}" for m in recent])
+        prompt = (
+            "请基于以下对话内容，生成一个简洁的中文对话标题（不超过12个字，避免标点与引号，突出主题要点）：\n"
+            f"{convo}\n"
+            "只输出标题本身。"
+        )
+        llm = VolcanoLLM(streaming=False, model_id=title_model_id)
+        title = llm.invoke(prompt)
+        return _truncate_title(title) or "新的对话"
+    except Exception:
+        # 任意异常回退
+        for m in reversed(messages):
+            if m.get("role") == "user" and m.get("content"):
+                return _truncate_title(m["content"]) or "新的对话"
+        return "新的对话"
+
+
+def _truncate_title(text: str) -> str:
+    """裁剪标题到约12字，去除多余空白与换行。"""
+    if not isinstance(text, str):
+        return ""
+    t = text.strip().replace("\n", " ")
+    return t[:12]

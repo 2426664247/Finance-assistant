@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from datetime import datetime
-from langchain.schema import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from .session import handle_new_chat, load_chat_history, HISTORY_DIR, delete_chat_history
 
 def render_page_config():
@@ -41,9 +41,23 @@ def render_sidebar():
         history_files = sorted(os.listdir(HISTORY_DIR), reverse=True)
         for filename in history_files:
             session_id = filename.split('.')[0]
+            # 读取标题（兼容旧格式）
+            title = None
+            try:
+                fp = os.path.join(HISTORY_DIR, filename)
+                with open(fp, 'r', encoding='utf-8') as f:
+                    data = f.read()
+                import json as _json
+                parsed = _json.loads(data)
+                if isinstance(parsed, dict):
+                    title = parsed.get('title')
+            except Exception:
+                title = None
+            display_label = title or session_id
+
             col1, col2 = st.columns([0.8, 0.2])
             with col1:
-                if st.button(session_id, key=f"history_{filename}", use_container_width=True):
+                if st.button(display_label, key=f"history_{filename}", use_container_width=True):
                     load_chat_history(session_id)
             with col2:
                 if st.button("🗑️", key=f"delete_{filename}", use_container_width=True):
