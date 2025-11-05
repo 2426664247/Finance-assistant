@@ -107,3 +107,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Chat history
+chat_history/

@@ -46,7 +46,7 @@ class FinancialDataTool(BaseTool):
             if ts_init_ok and ts_code:
                 ts_result = self._fetch_with_tushare(ts_code, start_date, end_date)
                 if ts_result:
-                    return {"output": ts_result}
+                    return ts_result
                 # 若 Tushare 返回空或失败，继续尝试国际源
         # 国际源（yfinance），失败则回退到 Stooq
         try:
