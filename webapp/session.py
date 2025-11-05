@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import json
+import uuid
 from datetime import datetime
 
 # --- 文件夹设置 ---
@@ -48,11 +49,23 @@ def handle_new_chat():
     st.rerun()
 
 def load_chat_history(session_id):
-    """加载指定的历史聊天记录"""
+    """加载指定的聊天历史记录到当前会话"""
+    # 在加载前，先保存当前可能正在进行的对话
     save_chat_history(st.session_state.current_session_id, get_current_messages())
-    
-    st.session_state.current_session_id = session_id
+
     file_path = os.path.join(HISTORY_DIR, f"{session_id}.json")
-    with open(file_path, 'r', encoding='utf-8') as f:
-        st.session_state.messages[session_id] = json.load(f)
-    st.rerun()
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            chat_history = json.load(f)
+            # 修复：将加载的列表作为值存入字典，而不是覆盖整个字典
+            st.session_state.messages[session_id] = chat_history
+            # 修复：更新 current_session_id 以切换到加载的会话
+            st.session_state.current_session_id = session_id
+            st.rerun()
+
+def delete_chat_history(session_id):
+    """删除指定的聊天历史记录文件"""
+    file_path = os.path.join(HISTORY_DIR, f"{session_id}.json")
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        # st.rerun() # The rerun is already in ui.py
