@@ -1,0 +1,20 @@
+book_id,goodreads_book_id,best_book_id,work_id,books_count,isbn,isbn13,authors,original_publication_year,original_title,title,language_code,average_rating
+1,2767052,2767052,2792775,272,439023483,9.78E+12,Suzanne Collins,2008,The Hunger Games,"The Hunger Games (The Hunger Games, #1)",eng,4.34
+2,3,3,4640799,491,439554934,9.78E+12,"J.K. Rowling, Mary GrandPr¨¦",1997,Harry Potter and the Philosopher's Stone,"Harry Potter and the Sorcerer's Stone (Harry Potter, #1)",eng,4.44
+3,41865,41865,3212258,226,316015849,9.78E+12,Stephenie Meyer,2005,Twilight,"Twilight (Twilight, #1)",en-US,3.57
+4,2657,2657,3275794,487,61120081,9.78E+12,Harper Lee,1960,To Kill a Mockingbird,To Kill a Mockingbird,eng,4.25
+5,4671,4671,245494,1356,743273567,9.78E+12,F. Scott Fitzgerald,1925,The Great Gatsby,The Great Gatsby,eng,3.89
+6,11870085,11870085,16827462,226,525478817,9.78E+12,John Green,2012,The Fault in Our Stars,The Fault in Our Stars,eng,4.26
+7,5907,5907,1540236,969,618260307,9.78E+12,J.R.R. Tolkien,1937,The Hobbit or There and Back Again,The Hobbit,en-US,4.25
+8,5107,5107,3036731,360,316769177,9.78E+12,J.D. Salinger,1951,The Catcher in the Rye,The Catcher in the Rye,eng,3.79
+9,960,960,3338963,311,1416524797,9.78E+12,Dan Brown,2000,Angels & Demons ,"Angels & Demons  (Robert Langdon, #1)",en-CA,3.85
+10,1885,1885,3060926,3455,679783261,9.78E+12,Jane Austen,1813,Pride and Prejudice,Pride and Prejudice,eng,4.24
+11,77203,77203,3295919,283,1594480001,9.78E+12,Khaled Hosseini,2003,The Kite Runner ,The Kite Runner,eng,4.26
+12,13335037,13335037,13155899,210,62024035,9.78E+12,Veronica Roth,2011,Divergent,"Divergent (Divergent, #1)",eng,4.24
+13,5470,5470,153313,995,451524934,9.78E+12,"George Orwell, Erich Fromm, Celal ¨¹ster",1949,Nineteen Eighty-Four,1984,eng,4.14
+14,7613,7613,2207778,896,452284244,9.78E+12,George Orwell,1945,Animal Farm: A Fairy Story,Animal Farm,eng,3.87
+15,48855,48855,3532896,710,553296981,9.78E+12,"Anne Frank, Eleanor Roosevelt, B.M. Mooyaart-Doubleday",1947,Het Achterhuis: Dagboekbrieven 14 juni 1942 - 1 augustus 1944,The Diary of a Young Girl,eng,4.1
+16,2429135,2429135,1708725,274,307269752,9.78E+12,"Stieg Larsson, Reg Keeland",2005,M?n som hatar kvinnor,"The Girl with the Dragon Tattoo (Millennium, #1)",eng,4.11
+17,6148028,6148028,6171458,201,439023491,9.78E+12,Suzanne Collins,2009,Catching Fire,"Catching Fire (The Hunger Games, #2)",eng,4.3
+18,5,5,2402163,376,043965548X,9.78E+12,"J.K. Rowling, Mary GrandPr¨¦, Rufus Beck",1999,Harry Potter and the Prisoner of Azkaban,"Harry Potter and the Prisoner of Azkaban (Harry Potter, #3)",eng,4.53
+19,34,34,3204327,566,618346252,9.78E+12,J.R.R. Tolkien,1954, The Fellowship of the Ring,"The Fellowship of the Ring (The Lord of the Rings, #1)",eng,4.34

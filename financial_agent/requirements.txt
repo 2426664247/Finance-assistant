@@ -1,0 +1,29 @@
+# 核心框架
+langchain==0.0.350
+langchain-community==0.0.10
+
+# 火山引擎模型接入
+volcengine-python-sdk[ark]
+
+# 金融数据接口
+tushare
+yfinance
+
+# 向量数据库
+faiss-cpu==1.7.4
+
+# 文本嵌入模型 (中文推荐)
+# sentence-transformers==2.2.2
+
+# 数据处理
+pandas==2.1.4
+numpy==1.26.2
+
+# 技术指标计算
+
+
+# 绘图 (可选，用于K线图)
+# plotly==5.17.0
+
+# 环境变量管理
+python-dotenv==1.0.0
