@@ -1,5 +1,4 @@
-from langchain.agents.structured_chat.base import create_structured_chat_agent
-from langchain.agents.agent import AgentExecutor
+from langchain.agents import create_structured_chat_agent, AgentExecutor
 from langchain import hub
 
 from ..tools.financial_data_tool import FinancialDataTool

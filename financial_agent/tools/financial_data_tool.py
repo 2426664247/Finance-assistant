@@ -37,7 +37,7 @@ class FinancialDataTool(BaseTool):
     description: str = "用于获取股票的日K线数据。输入应为一个包含'symbol', 'start_date', 'end_date'的字典。"
     args_schema: Type[BaseModel] = StockQueryInput
 
-    def _run(self, symbol: str, start_date: str, end_date: str) -> dict:
+    def _run(self, symbol: str, start_date: str, end_date: str) -> str:
         """执行获取日K线数据的核心逻辑"""
         # 若为 A 股代码，优先使用 Tushare（更稳定）
         if self._is_china_equity(symbol):
@@ -52,12 +52,12 @@ class FinancialDataTool(BaseTool):
         try:
             data = yf.download(symbol, start=start_date, end=end_date)
             if data is not None and not data.empty:
-                return {"output": f"成功获取 {symbol} 从 {start_date} 到 {end_date} 的日K线数据：\n{data.to_string()}"}
+                return f"成功获取 {symbol} 从 {start_date} 到 {end_date} 的日K线数据：\n{data.to_string()}"
             result = self._fallback_fetch(symbol, start_date, end_date)
-            return {"output": result}
+            return result
         except Exception as e:
             result = self._fallback_fetch(symbol, start_date, end_date, err=e)
-            return {"output": result}
+            return result
 
     def _arun(self, query: str):
         raise NotImplementedError("This tool does not support async")
