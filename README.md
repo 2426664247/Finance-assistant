@@ -1,12 +1,93 @@
 # 金融咨询智能体（Financial Agent）
-版本：v1.4.1
+版本：v1.4.2
 
 一个基于 Streamlit 与 LangChain 的金融咨询智能体，支持基础金融问答、知识库检索以及股票日K数据查询。文档面向外部读者，提供通用的安装、配置与运行说明。
 
-## 功能概览
-- 金融术语与常识问答
-- 知识库检索（CSV 构建的本地知识库）
-- 股票日K数据查询（A 股优先使用 Tushare，国际源采用 yfinance，失败时回退 Stooq）
+## ✨ 功能特性
+
+- **自然语言交互**：像与真人对话一样，提出您的金融问题。
+- **实时金融数据**：集成 Tushare 和 yfinance 数据接口，提供股票、指数等实时和历史数据查询。
+- **本地知识库**：内置金融知识库，能够解答专业的金融概念和问题。
+- **可扩展工具集**：基于 LangChain Agent 架构，可以方便地扩展更多金融工具。
+- **Web 界面**：使用 Streamlit 构建，提供友好的用户交互界面。
+
+## 🚀 环境设置与运行（当前版本：v1.4.2）
+
+更多版本改动请参见 [`CHANGELOG.md`](./CHANGELOG.md)。
+
+为了保证项目的稳定运行和依赖隔离，强烈建议您使用虚拟环境。本项目的开发和测试环境基于以下精确版本，为确保最佳兼容性，请遵循此配置。
+
+### 1. 基础环境
+
+- **Python 版本**: `3.10.19`
+
+请确保您的系统中已安装 Python 3.10.19。您可以从 [Python 官网](https://www.python.org/downloads/release/python-31019/) 下载对应的安装包。
+
+### 2. 克隆项目
+
+```bash
+git clone git@github.com:2426664247/Finance-assistant.git
+cd Finance-assistant
+```
+
+### 3. 创建并激活虚拟环境
+
+- **Windows**:
+  ```bash
+  # 使用指定的 Python 版本创建虚拟环境
+  python -m venv .venv
+
+  # 激活虚拟环境
+  .\.venv\Scripts\Activate.ps1
+  ```
+
+- **macOS / Linux**:
+  ```bash
+  # 使用指定的 Python 版本创建虚拟环境
+  python3 -m venv .venv
+
+  # 激活虚拟环境
+  source .venv/bin/activate
+  ```
+
+激活成功后，您会看到命令行提示符前出现 `(.venv)` 标识。
+
+### 4. 安装项目依赖
+
+所有依赖项及其精确版本都记录在 `financial_agent/requirements.txt` 文件中。该文件通过 `pip freeze` 生成，锁定了所有直接及间接依赖，以确保在任何环境下都能创建 100% 一致的运行环境。
+
+```bash
+pip install -r financial_agent/requirements.txt
+```
+
+这将安装项目所需的所有软件包，保证了版本的精确匹配和项目的稳定性。
+
+### 5. 配置环境变量
+
+项目需要配置一些 API 密钥才能正常工作。请在项目根目录下创建一个名为 `.env` 的文件，并根据 `financial_agent/.env.example` 的格式填入您的密钥：
+
+```
+# .env
+
+# 火山引擎大模型 Access Key
+VOLC_ACCESS_KEY="<your-access-key>"
+VOLC_SECRET_KEY="<your-secret-key>"
+
+# Tushare 数据接口 Token
+TUSHARE_TOKEN="<your-tushare-token>"
+```
+
+### 6. 运行应用
+
+一切准备就绪后，在项目根目录下运行以下命令来启动 Streamlit 应用：
+
+```bash
+streamlit run app.py
+```
+
+应用启动后，您会在终端看到本地访问地址（通常是 `http://localhost:8501`），在浏览器中打开即可开始使用。
+
+## 项目结构
 
 ## 目录结构（简要）
 ```

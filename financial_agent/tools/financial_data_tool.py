@@ -38,11 +38,7 @@ class FinancialDataTool(BaseTool):
     args_schema: Type[BaseModel] = StockQueryInput
 
     def _run(self, symbol: str, start_date: str, end_date: str) -> str:
-<<<<<<< HEAD
-        """执行获取日K线数据的核心逻辑"""
-=======
-        """执行获取日K线数据的核心逻辑。返回纯文本字符串以兼容 LangChain Agent。"""
->>>>>>> release/v1.4.1
+        """执行获取日K线数据的核心逻辑。优先 yfinance，失败则多重回退。"""
         # 若为 A 股代码，优先使用 Tushare（更稳定）
         if self._is_china_equity(symbol):
             ts_init_ok = self._init_tushare()
@@ -52,16 +48,12 @@ class FinancialDataTool(BaseTool):
                 if ts_result:
                     return ts_result
                 # 若 Tushare 返回空或失败，继续尝试国际源
-        # 国际源（yfinance），失败则回退到 Stooq
-        try:
-            data = yf.download(symbol, start=start_date, end=end_date)
-            if data is not None and not data.empty:
-                return f"成功获取 {symbol} 从 {start_date} 到 {end_date} 的日K线数据：\n{data.to_string()}"
-            result = self._fallback_fetch(symbol, start_date, end_date)
-            return result
-        except Exception as e:
-            result = self._fallback_fetch(symbol, start_date, end_date, err=e)
-            return result
+        # 国际源（yfinance），失败则回退到更稳健的方式与 Stooq
+        df = self._fetch_with_yfinance(symbol, start_date, end_date)
+        if df is not None and not df.empty:
+            return f"成功获取 {symbol} 从 {start_date} 到 {end_date} 的日K线数据：\n{df.to_string()}"
+        # yfinance 失败或返回空，使用回退数据源（需安装 pandas-datareader）
+        return self._fallback_fetch(symbol, start_date, end_date)
 
     def _arun(self, query: str):
         raise NotImplementedError("This tool does not support async")
@@ -185,3 +177,29 @@ class FinancialDataTool(BaseTool):
                 f"yfinance 获取失败且 Stooq 回退失败。请稍后重试或更换数据源。"
                 f"yfinance错误: {err}; Stooq错误: {e2}"
             )
+
+    def _fetch_with_yfinance(self, symbol: str, start_date: str, end_date: str):
+        """更稳健的 yfinance 获取逻辑：先 download，再使用 Ticker.history 作为二次尝试。"""
+        try:
+            # 第一尝试：download 按区间获取
+            df = yf.download(
+                symbol,
+                start=start_date,
+                end=end_date,
+                interval="1d",
+                progress=False,
+                threads=False,
+            )
+            if df is not None and not df.empty:
+                return df
+        except Exception:
+            pass
+        try:
+            # 第二尝试：Ticker.history，部分标的在 download 下会返回空
+            tk = yf.Ticker(symbol.strip())
+            df2 = tk.history(start=start_date, end=end_date, interval="1d")
+            if df2 is not None and not df2.empty:
+                return df2
+        except Exception:
+            pass
+        return None
