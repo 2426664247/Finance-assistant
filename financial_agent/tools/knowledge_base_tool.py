@@ -36,7 +36,7 @@ class KnowledgeBaseTool(BaseTool):
             chain_type_kwargs={"prompt": PROMPT}
         )
 
-    def _run(self, query: str) -> dict:
-        """Executes the QA chain to answer a query."""
+    def _run(self, query: str) -> str:
+        """Executes the QA chain to answer a query and returns plain text."""
         result = self.qa_chain.invoke({"query": query})
-        return {"output": result.get("result", "")}
+        return result.get("result", "")
